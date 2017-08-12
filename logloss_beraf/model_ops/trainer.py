@@ -30,7 +30,7 @@ from logloss_beraf.utils.constants import (
     FEATURE_IMPORTANCE_COLUMN,
     TRAINED_MODEL_NAME,
 )
-from logloss_beraf.visualisation.plotting import plot_pca_by_annotation
+from logloss_beraf.visualization.plotting import plot_pca_by_annotation
 
 logger = logging.getLogger(__name__)
 
