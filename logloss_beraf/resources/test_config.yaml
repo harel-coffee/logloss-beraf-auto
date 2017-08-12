@@ -1,0 +1,18 @@
+common:
+  # Classifier to use, currently only RandomForest (RF) is supported
+  classifier: 'RF'
+train:
+  # Cross validation method. SKFold or LOO currently supported
+  cv_method: 'SKFold'
+  # Strategy to balance class weights.
+  class_weights: 'balanced'
+  # Number of estimators in the final model
+  final_clf_estimators_num: 30
+  # Number of estimators on the intermediate classifiers training step
+  intermediate_clf_estimators_num: 10
+  # Number of LogLoss function estimates on a given interval of sites
+  # Value above 30 is recommended
+  logloss_estimates: 50
+  # Number of randomized logistics regression iterations
+  rr_iterations: 15
+  correlation_threshold: 0.85

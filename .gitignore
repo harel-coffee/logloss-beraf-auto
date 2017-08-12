@@ -1,1 +1,8 @@
+/build
+/dist
+/*.egg
+/*.egg-info
+/**/__pycache__/
+*.pyc
 .idea
+*.DS_Store

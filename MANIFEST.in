@@ -1,0 +1,1 @@
+include README.rst CHANGELOG.txt LICENSE.txt logloss_beraf/resources/* logloss_beraf/config.yaml
