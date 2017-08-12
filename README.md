@@ -19,9 +19,9 @@ Quick start
         logloss_beraf test_run
 
 3. Prepare input feature and annotation tables (in CSV format). The order of samples in those tables is supposed to be the same
-    Methylation data:
 
 ```
+     # Methylation data
                 Feature_1 Feature_2  Feature_3
      Sample_0   0.909642  0.823715   0.069785
      Sample_1   0.564799  0.199724   0.840741
@@ -30,9 +30,9 @@ Quick start
      Sample_4   0.124098  0.347752   0.954853
 ```
     
-    Annotation data:
 
-```   
+``` 
+     # Annotation data
      Sample_Name  Type
      Sample_0     Benign
      Sample_1     Pathologic
