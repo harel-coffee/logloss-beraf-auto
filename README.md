@@ -12,7 +12,7 @@ Quick start
 
 1. Install ``logloss-beraf`` with all the dependencies::
 
-        pip install logloss_beraf
+        pip install logloss-beraf
 
 2. Make a test run. It uses data included to the package::
 
@@ -29,9 +29,9 @@ Quick start
      Sample_3   0.810637  0.006836   0.888038
      Sample_4   0.124098  0.347752   0.954853
 ```
-    
 
-``` 
+
+```
      # Annotation data
      Sample_Name  Type
      Sample_0     Benign
@@ -39,7 +39,7 @@ Quick start
      Sample_2     Benign
      Sample_3     Benign
      Sample_4     Pathologic
- ```   
+ ```
 
 4. `Train model`
 
