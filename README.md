@@ -12,7 +12,7 @@ Quick start
 
 1. Install ``logloss-beraf`` with all the dependencies::
 
-        pip install logloss-beraf
+        easy_install logloss-beraf
 
 2. Make a test run. It uses data included to the package::
 
