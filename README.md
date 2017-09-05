@@ -7,16 +7,26 @@ methods and an ensemble-based classifier. It is expected to handle higly
 unbalanced and heterogeneous data. Also it is intended for the design
 of diagnostic panels that can be potentially used in routine laboratory practice.
 
+Pre-requisites
+-----------
+
+It is implied that one has python 2.7 and at least a [miniconda](https://conda.io/miniconda) distribution installed
+
 Quick start
 -----------
 
-1. Install ``logloss-beraf`` with all the dependencies::
+1. Install ``logloss-beraf`` with all the dependencies:
+        
+```sh
+conda install scikit-learn matplotlib
+pip install logloss-beraf
+```
 
-        easy_install logloss-beraf
+2. Make a test run. It uses data included to the package:
 
-2. Make a test run. It uses data included to the package::
-
-        logloss_beraf test_run
+```sh
+logloss_beraf test_run
+```
 
 3. Prepare input feature and annotation tables (in CSV format). The order of samples in those tables is supposed to be the same
 
