@@ -2,6 +2,9 @@ scikit-learn==0.18.1
 pandas==0.18.1
 bokeh==0.12.2
 pyyaml
+matplotlib
+statsmodels==0.6.1
+seaborn==0.7.1
 # testing
 pytest
 pytest-cov

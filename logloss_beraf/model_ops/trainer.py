@@ -3,7 +3,11 @@ import copy
 import logging
 import os
 
+# https://github.com/matplotlib/matplotlib/issues/3466/#issuecomment-195899517
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
+
 import numpy as np
 import pandas
 from sklearn import metrics

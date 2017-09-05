@@ -14,7 +14,7 @@ class PyTest(TestCommand):
 
 setup(
     name='logloss-beraf',
-    version="0.2",
+    version="0.7",
     description="A tool for costructing a limited sized diagnostic panels based on methylation data",
     long_description=open("README.md").read(),
     classifiers=[

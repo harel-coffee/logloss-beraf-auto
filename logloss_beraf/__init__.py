@@ -1,8 +1,11 @@
 import argparse
 import os
+
+import logging
 import yaml
 import pandas
 
+logger = logging.getLogger(__name__)
 
 def _check_path(path):
     if not os.path.exists(path):
@@ -59,6 +62,8 @@ def test_run(args):
                '--config \"{0}/resources/test_config.yaml\"'.format(os.path.dirname(__file__)))
 
     os.system(command)
+
+    logger.info("Test run finished successfuly")
 
 def main():
     parser = argparse.ArgumentParser()
