@@ -22,9 +22,7 @@ import copy
 import itertools
 import seaborn
 
-import logging
-logger = logging.getLogger(__name__)
-
+from settings import logger
 
 def plot_pca_two_group(group1, group2, title, group1_annotation, group2_annotation, outfile=None):
     logger.info("Preparing PCA plot...")
@@ -34,7 +32,7 @@ def plot_pca_two_group(group1, group2, title, group1_annotation, group2_annotati
 
     logger.info("Explained variance ratio: {0}".format(pca.explained_variance_ratio_))
 
-    p = figure(title=title, background_fill="#E8DDCB", tools="save,hover,resize")
+    p = figure(title=title, background_fill_color="#E8DDCB", tools="save,hover")
     p.xaxis.axis_label = 'Component 1'
     p.yaxis.axis_label = 'Component 2'
 
@@ -103,7 +101,7 @@ def plot_pca_several_group(t_group, title, annotation, clinical_column=None, sam
     pca = PCA(n_components=5)
     X_r = pca.fit(t_group.T.values).transform(t_group.T.values)
     logger.info("Explained variance ratio:", pca.explained_variance_ratio_)
-    p = figure(title=title, background_fill="#E8DDCB", tools="save,hover,resize")
+    p = figure(title=title, background_fill_color="#E8DDCB", tools="save,hover")
     p.xaxis.axis_label = 'Component 1'
     p.yaxis.axis_label = 'Component 2'
 

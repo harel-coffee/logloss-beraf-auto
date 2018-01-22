@@ -4,16 +4,15 @@ import logging
 import os
 
 # https://github.com/matplotlib/matplotlib/issues/3466/#issuecomment-195899517
+import itertools
 import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
 
+matplotlib.use('agg')
 import numpy as np
 import pandas
-from sklearn import metrics
 from sklearn import (
     preprocessing,
-    cross_validation,
+    model_selection,
 )
 from sklearn.cross_validation import (
     LeaveOneOut,
@@ -21,12 +20,9 @@ from sklearn.cross_validation import (
 )
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import RandomizedLogisticRegression
-from sklearn.metrics import (
-    classification_report,
-)
 import cPickle as pickle
 
-from logloss_beraf.utils.constants import (
+from utils.constants import (
     PREFILTER_PCA_PLOT_NAME,
     POSTFILTER_PCA_PLOT_NAME,
     FEATURE_IMPORTANCE_PLOT_NAME,
@@ -34,9 +30,10 @@ from logloss_beraf.utils.constants import (
     FEATURE_IMPORTANCE_COLUMN,
     TRAINED_MODEL_NAME,
 )
-from logloss_beraf.visualization.plotting import plot_pca_by_annotation
+from visualization.plotting import plot_pca_by_annotation
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+from settings import logger
 
 
 class LLBModelTrainer(object):
@@ -50,10 +47,10 @@ class LLBModelTrainer(object):
     Also does some visualizations
     """
 
-    def __init__(self, threads=1, max_num_of_features=20,
+    def __init__(self, threads=0, max_num_of_features=20,
                  cv_method="SKFold", class_weights="balanced", final_clf_estimators_num=3000,
-                 intermediate_clf_estimators_num=750, logloss_estimates=50, min_beta_threshold=0.2,
-                 rr_iterations=1500, correlation_threshold=0.85, output_folder=None):
+                 intermediate_clf_estimators_num=1000, logloss_estimates=50, min_beta_threshold=0.2,
+                 rr_iterations=5000, correlation_threshold=0.85, output_folder=None):
         """
         :param threads:
         :type threads: int
@@ -92,9 +89,8 @@ class LLBModelTrainer(object):
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
-    def _run_randomized_regression(self, feature_df, annotation, clinical_column, sample_fraction=0.75):
+    def _run_randomized_regression(self, feature_df, annotation, clinical_column, sample_fraction=0.7):
         annotation = copy.deepcopy(annotation)
-
         # Encode labels of the classes
         le = preprocessing.LabelEncoder()
         annotation[clinical_column] = le.fit_transform(annotation[clinical_column])
@@ -102,7 +98,8 @@ class LLBModelTrainer(object):
         clf = RandomizedLogisticRegression(
             n_resampling=self.rr_iterations,
             sample_fraction=sample_fraction,
-            n_jobs=self.threads,
+            n_jobs=1,
+            verbose=1,
         ).fit(feature_df, annotation[clinical_column])
 
         selected_features = feature_df.T[clf.scores_ != 0].index
@@ -118,10 +115,10 @@ class LLBModelTrainer(object):
             if self.cv_method == "LOO":
                 cv_algo = LeaveOneOut(len(y))
             elif self.cv_method == "SKFold":
-                cv_algo = StratifiedKFold(y, n_folds=5)
+                cv_algo = StratifiedKFold(y)
 
             logger.info("Running cross-validation...")
-            scores = cross_validation.cross_val_score(
+            scores = model_selection.cross_val_score(
                 clf,
                 X,
                 y,
@@ -135,7 +132,19 @@ class LLBModelTrainer(object):
         return clf, scores.mean(), scores.std()
 
     def _describe_and_filter_regions(self, basic_region_df, annotation, clinical_column, sample_name_column):
-        logger.info("Initial number of regions: %d", basic_region_df.shape)
+        logger.info("Initial number of regions: {0}".format(basic_region_df.shape))
+
+        # Initial filtering based on min_beta_threshold
+        class_combinations = itertools.combinations(annotation[clinical_column].unique(), 2)
+        for combination in class_combinations:
+            first_class_samples = annotation[annotation[clinical_column] == combination[0]][sample_name_column]
+            second_class_samples = annotation[annotation[clinical_column] == combination[1]][sample_name_column]
+            mean_difference = (basic_region_df.loc[first_class_samples].mean()
+                               - basic_region_df.loc[second_class_samples].mean())
+            basic_region_df = basic_region_df[mean_difference[abs(mean_difference) > self.min_beta_threshold].index.tolist()]
+            basic_region_df = basic_region_df.dropna(how="any", axis=1)
+
+        logger.info("Number of features after initial filtration: {0}".format(basic_region_df.shape))
 
         plot_pca_by_annotation(
             basic_region_df,
@@ -144,6 +153,8 @@ class LLBModelTrainer(object):
             sample_name_column,
             outfile=os.path.join(self.output_folder, PREFILTER_PCA_PLOT_NAME),
         )
+
+        logger.info("Starting feature selection with RLR...")
         selected_features, model = self._run_randomized_regression(
             basic_region_df,
             annotation,
@@ -174,12 +185,16 @@ class LLBModelTrainer(object):
         ]
 
     def get_threshold(self, logloss_df):
-        ll_max = logloss_df[logloss_df["mean"] == logloss_df["mean"].max()].iloc[0]
+        # Standard error
         ll_se = logloss_df["mean"].std() / np.sqrt(len(logloss_df["mean"]))
-        ll_interval = logloss_df[logloss_df["mean"] > (ll_max["mean"] - ll_se)]
+
+        # Restricting search to desired number of features.
+        logloss_df = logloss_df[logloss_df["len"] <= int(self.max_num_of_features)]
+
+        ll_max = logloss_df[logloss_df["mean"] == logloss_df["mean"].max()].iloc[0]
+        ll_interval = logloss_df[logloss_df["mean"] > (ll_max["mean"] - 0.5 * ll_se)]
         res = ll_interval[ll_interval["len"] == ll_interval["len"].min()].iloc[0]
         return res
-
 
     def train(self, train_regions, anndf, sample_class_column, sample_name_column):
         """
@@ -194,6 +209,18 @@ class LLBModelTrainer(object):
         :type sample_name_column: str
         :return:
         """
+        # train_regions = train_regions.T
+
+        # First sort both train_regions and annotation according to sample names
+        train_regions = train_regions.sort_index(ascending=True)
+        # Ensure annotation contains only samples from the train_regions
+        anndf = anndf[anndf[sample_name_column].isin(train_regions.index.tolist())].sort_values(
+            by=[sample_name_column],
+            ascending=True
+        ).dropna(subset=[sample_name_column])
+        train_regions = train_regions.ix[anndf[sample_name_column].tolist()]
+        assert anndf[sample_name_column].tolist() == train_regions.index.tolist(), \
+            "Samples in the annotations table are diferrent from those in feature table"
 
         # Prefilter regions
         selected_regions, clf = self._describe_and_filter_regions(
@@ -221,7 +248,7 @@ class LLBModelTrainer(object):
         # Extracting correlated site
         feature_importances = feature_importances[
             abs(feature_importances[FEATURE_IMPORTANCE_COLUMN]) > 0
-        ]
+            ]
 
         corr_matrix = train_regions[feature_importances[FEATURE_COLUMN]].corr().applymap(
             lambda x: 1 if abs(x) >= self.correlation_threshold else 0
@@ -231,11 +258,11 @@ class LLBModelTrainer(object):
         logloss_di = pandas.DataFrame(columns=logloss_df_cols)
 
         for thresh in np.arange(
-                feature_importances[FEATURE_IMPORTANCE_COLUMN].quantile(0.8),
+                feature_importances[FEATURE_IMPORTANCE_COLUMN].quantile(0.99),
                 feature_importances[FEATURE_IMPORTANCE_COLUMN].max(),
                 (
-                    feature_importances[FEATURE_IMPORTANCE_COLUMN].max() -
-                    feature_importances[FEATURE_IMPORTANCE_COLUMN].min()
+                        feature_importances[FEATURE_IMPORTANCE_COLUMN].max() -
+                        feature_importances[FEATURE_IMPORTANCE_COLUMN].min()
                 ) / self.logloss_estimates
         ):
             selected_features = self._apply_feature_imp_thresh(selected_regions, first_clf.feature_importances_, thresh)
@@ -254,7 +281,7 @@ class LLBModelTrainer(object):
             )
             logloss_di = logloss_di.append(
                 pandas.Series([thresh, mean, std, len(selected_features)], index=logloss_df_cols),
-                ignore_index = True,
+                ignore_index=True,
             )
             logger.info("LogLoss mean=%f, std=%f on threshold %f", mean, std, thresh)
 

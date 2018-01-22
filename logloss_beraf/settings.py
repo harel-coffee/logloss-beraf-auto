@@ -18,4 +18,11 @@ LOG_FORMAT = {
     logging.ERROR: LOG_FORMAT_0,
     logging.CRITICAL: LOG_FORMAT_0,
 }
+
 DEFAULT_LOG_LEVEL = logging.INFO
+
+console = logging.StreamHandler()
+console.setLevel(logging.DEBUG)
+logging.getLogger("main").addHandler(console)
+logger = logging.getLogger("main")
+logger.setLevel(logging.DEBUG)

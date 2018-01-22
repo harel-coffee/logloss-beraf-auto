@@ -1,7 +1,9 @@
+import os
+
 import pandas
-import pytest
 from sklearn.datasets import make_classification
 
+from logloss_beraf.model_ops.applier import LLBModelApplier
 # Build a classification task using 3 informative features
 from logloss_beraf.model_ops.trainer import LLBModelTrainer
 
@@ -29,6 +31,7 @@ OUTPUT_FOLDER = "./out"
 sites = pandas.DataFrame(X, columns=["Feature_" + str(i) for i in range(0, 100, 1)])
 sites.index = sites.index.map(lambda x: "Sample_" + str(x))
 
+
 def test_informative_feature_selection():
     trainer = LLBModelTrainer(
         max_num_of_features=5,
@@ -45,3 +48,11 @@ def test_informative_feature_selection():
         sample_name_column=SAMPLE_NAME_COLUMN,
     )
     assert len(selected_features) == 3
+
+
+def test_model_application():
+    LLBModelApplier().apply(
+        sites,
+        os.path.join(OUTPUT_FOLDER, "trained_model"),
+        answers=annotation[CLINICAL_COLUMN],
+    )

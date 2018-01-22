@@ -1,6 +1,6 @@
 scikit-learn==0.18.1
 pandas==0.18.1
-bokeh==0.12.2
+bokeh==0.12.7
 pyyaml
 matplotlib
 statsmodels==0.6.1
