@@ -43,7 +43,6 @@ class LLBModelApplier(object):
             #le = preprocessing.LabelEncoder()
             #answers = le.fit_transform(answers)
 
-            import pdb;pdb.set_trace()
             # ensure all samples have answers
             answers = answers.dropna()
             features = features.ix[list(set(answers.index).intersection(features.index))]
